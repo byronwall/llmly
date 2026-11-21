@@ -15,6 +15,7 @@ from __future__ import annotations
 import json
 import os
 import shutil
+import subprocess
 import sys
 import tempfile
 
@@ -33,6 +34,33 @@ def dump(path: str, data) -> None:
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w") as f:
         json.dump(data, f, separators=(",", ":"))
+
+
+def stats(n_sessions: int) -> dict:
+    """Numbers for the page, counted from the repo at build time."""
+    def lines(folder: str, ext: str) -> int:
+        total = 0
+        for dirpath, _, files in os.walk(os.path.join(ROOT, folder)):
+            for name in files:
+                if name.endswith(ext):
+                    with open(os.path.join(dirpath, name)) as f:
+                        total += sum(1 for _ in f)
+        return total
+
+    def git(*args: str) -> str:
+        return subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True).stdout.strip()
+
+    with open(os.path.join(ROOT, "tests", "test_analyzer.py")) as f:
+        tests = sum(1 for line in f if line.lstrip().startswith("def test_"))
+    return {
+        "commits": int(git("rev-list", "--count", "HEAD") or 0),
+        "first_commit": git("log", "--reverse", "--format=%ad", "--date=format:%B %Y").split("\n")[0],
+        "built_from": git("rev-parse", "--short", "HEAD"),
+        "python_lines": lines("llmly", ".py"),
+        "js_lines": lines("llmly/static/js", ".mjs"),
+        "tests": tests,
+        "demo_sessions": n_sessions,
+    }
 
 
 def main() -> None:
@@ -78,6 +106,7 @@ def main() -> None:
     with open(os.path.join(OUT, "index.html"), "w") as f:
         f.write(html)
     shutil.rmtree(logs)
+    dump(os.path.join(OUT, "stats.json"), stats(len(sids)))
     print(f"demo: {len(sids)} sessions -> {os.path.relpath(OUT, ROOT)}")
 
 

@@ -1,0 +1,46 @@
+# llmly
+
+> A local web viewer for token use in VS Code Copilot, Codex and Claude Code sessions. It reads the log files those agents write on your machine, charts each session's input tokens over time, and lists the tool calls that fed each model request. Python, Flask, no account, no network calls.
+
+Run: `uvx llmly` (needs uv). Opens http://127.0.0.1:5057 or the next free port.
+From source: `git clone https://github.com/byronwall/llmly.git && cd llmly && uv run app.py`.
+
+## Options
+
+- `--port N`: port to listen on (default: first free port from 5057)
+- `--host H`: address to bind (default 127.0.0.1)
+- `--no-open`: do not open a browser tab
+- `--copilot-storage PATH`: VS Code `User/workspaceStorage` folder for Copilot logs
+- `--diagnose-logs`: print the Copilot log folders checked and logs found, then exit
+- `--debug`: Flask debug mode
+
+## Where it reads
+
+- Copilot: `<workspaceStorage>/<ws>/GitHub.copilot-chat/debug-logs/<session>/main.jsonl` (+ `runSubagent-*.jsonl`). Override: `COPILOT_USAGE_STORAGE`.
+- Codex: `~/.codex/sessions/**/*.jsonl` and `~/.codex/state_5.sqlite`. Override: `CODEX_USAGE_HOME` or `CODEX_HOME`.
+- Claude Code: `~/.claude/projects/<folder>/<session>.jsonl` (+ `<session>/subagents/agent-*.jsonl`). Override: `CLAUDE_USAGE_HOME` or `CLAUDE_CONFIG_DIR`.
+- Daily-total cache: `~/.cache/llmly`. Override: `LLMLY_CACHE_DIR`.
+
+## JSON API (while llmly runs)
+
+- `GET /api/sessions?source=all|copilot|codex|claude&start_ts=&end_ts=&since_hours=24&sort=total_input|aic|recent|uncached|requests|duration&limit=50&min_tokens=0`: session summaries
+- `GET /api/session/<source>:<id>`: one session, every request and the tool calls before it
+- `GET /api/daily_usage?source=all&unit=aic|usd`: daily totals
+- `GET /api/stats?source=all&since_hours=24`: totals for the window
+
+Example: `curl -s 'http://127.0.0.1:5057/api/sessions?source=claude&since_hours=24&sort=uncached&limit=5'`
+
+## Meaning of the numbers
+
+- input: the full prompt of a request, cached part included
+- cached: the part read from the prompt cache
+- uncached: input minus cached
+- AIC: Copilot billed credits (100 AIC = $1). Codex and Claude logs have no billed amount; llmly shows tokens or an estimate from list prices.
+- reasoning: the requested effort level, not a token count
+
+## Links
+
+- [Home page](https://byronwall.github.io/llmly/)
+- [Live demo on fictional logs](https://byronwall.github.io/llmly/demo/)
+- [README](https://github.com/byronwall/llmly#readme)
+- [Adding a new agent source](https://github.com/byronwall/llmly/blob/main/docs/agent-source-integration-guide.md)

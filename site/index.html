@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>llmly: token use in Copilot, Codex and Claude Code sessions</title>
+<meta name="description" content="llmly reads the session logs that VS Code Copilot, Codex and Claude Code write on your machine. It charts each session's input over time and shows the tool calls that fed every model request.">
+<meta property="og:title" content="llmly">
+<meta property="og:description" content="See where each coding-agent session spends its tokens. A local viewer for Copilot, Codex and Claude Code logs. Run it with uvx llmly.">
+<meta property="og:image" content="https://byronwall.github.io/llmly/images/og.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+<link rel="alternate" type="text/plain" href="llms.txt" title="llms.txt">
+<link rel="stylesheet" href="site.css">
+<script src="site.js" defer></script>
+</head>
+<body>
+<header class="nav" id="top">
+  <a class="wordmark" href="./"><img src="icon.svg" alt="" width="22" height="22">llmly</a>
+  <nav aria-label="Sections">
+    <a href="#demo">Demo</a>
+    <a href="#read">Read a chart</a>
+    <a href="#tour">Tour</a>
+    <a href="#start">Start</a>
+    <a href="#reference">Reference</a>
+    <a href="#agents">Agents</a>
+    <a class="gh" href="https://github.com/byronwall/llmly"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>GitHub</a>
+  </nav>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="hero-copy">
+      <h1>See where each coding session spends its tokens</h1>
+      <p class="lede">Your agent sends its whole context again on every turn. llmly reads the logs that Copilot, Codex and Claude Code already keep, and shows which turns, tools and sub-agents made a session expensive.</p>
+    </div>
+    <div class="try">
+      <div class="cmd"><code>uvx llmly</code><button type="button" class="copy" data-copy="uvx llmly" aria-label="Copy the command uvx llmly"><span>Copy</span></button></div>
+      <p class="try-note">Needs <a href="https://docs.astral.sh/uv/">uv</a>. Opens in your browser in about a minute.</p>
+      <p class="facts">Copilot · Codex · Claude Code<br>macOS, Linux, Windows · local files only · no account</p>
+    </div>
+
+    <figure class="demo" id="demo">
+      <figcaption class="demo-bar">
+        <span><b>Live demo</b> <span class="muted">· the real viewer on <span data-stat="demo_sessions">160</span> made-up sessions. Click a chart to open it.</span></span>
+        <a href="demo/" class="ext">Open full window</a>
+      </figcaption>
+      <div class="demo-frame">
+        <iframe src="demo/" title="llmly viewer running on fictional session logs" loading="eager"></iframe>
+        <a class="demo-still" href="demo/"><img src="images/grid.webp" alt="The llmly session grid: one chart per session, cumulative input tokens over time" width="1440" height="900"><span>Open the live demo</span></a>
+      </div>
+    </figure>
+  </section>
+
+  <section class="why prose" id="why">
+    <h2>Why it exists</h2>
+    <p>A long agent session gets expensive in a way the total hides. Each turn sends the conversation so far, so a session with 15 requests can carry a million input tokens. The cost lands where the context grew: a file read that pulled in 400 lines, a test run with long output, a sub-agent that started from scratch, or a compaction that threw the cache away.</p>
+    <p>The logs to see this are already on your disk. Copilot writes debug logs in VS Code's workspace storage, Codex writes rollout files, and Claude Code writes one transcript per session. llmly parses all three into one chart per session, and ties each tool call to the model request that read its result.</p>
+  </section>
+
+  <section class="read" id="read">
+    <div class="sec-head">
+      <h2>Read a chart</h2>
+      <p>Every session is one card. All cards share the y-axis, so the heaviest session fills the frame and the rest compare against it.</p>
+    </div>
+    <div class="anatomy">
+      <figure class="shot anat-shot">
+        <button type="button" class="zoomable" data-full="images/card.webp" data-title="One session card">
+          <img src="images/card.webp" alt="One llmly session card with its numbered parts" width="405" height="451" loading="lazy">
+        </button>
+        <span class="pin" data-pin="1" style="left:77%;top:2.7%">1</span>
+        <span class="pin" data-pin="2" style="left:96%;top:6.3%">2</span>
+        <span class="pin" data-pin="3" style="left:4%;top:11%">3</span>
+        <span class="pin" data-pin="4" style="left:89%;top:13%">4</span>
+        <span class="pin" data-pin="5" style="left:11%;top:59%">5</span>
+        <span class="pin" data-pin="6" style="left:51%;top:56.5%">6</span>
+        <span class="pin" data-pin="7" style="left:58%;top:50.5%">7</span>
+        <span class="pin" data-pin="8" style="left:81%;top:30%">8</span>
+        <span class="pin" data-pin="9" style="left:59%;top:76.5%">9</span>
+        <span class="pin" data-pin="10" style="left:71%;top:89.6%">10</span>
+      </figure>
+      <ol class="pins">
+        <li data-pin="1"><b>Start and totals.</b> When the session started, its total input, and the uncached part of it in red. Uncached input is what you pay full price for.</li>
+        <li data-pin="2"><b>Source and detail.</b> Copilot, Codex or Claude, then output, cache-hit rate, cost, requests, sub-agents and compactions.</li>
+        <li data-pin="3"><b>Shared scale.</b> One y-axis for every card in the result, so a flat card next to a steep one means what it looks like.</li>
+        <li data-pin="4"><b>Cumulative input.</b> The solid blue line is the main agent. Each dot is one model request. Dot size is that request's input.</li>
+        <li data-pin="5"><b>User message.</b> A star marks each prompt you typed.</li>
+        <li data-pin="6"><b>Sub-agent.</b> A dashed line starts where a sub-agent was spawned. Its tokens count toward the session.</li>
+        <li data-pin="7"><b>Compaction.</b> An orange diamond. The next request starts from a summary, so the context shrinks and the cache starts cold.</li>
+        <li data-pin="8"><b>Cache hit.</b> Blue is 70% or more of the input from cache, amber is 30–70%, red is under 30%.</li>
+        <li data-pin="9"><b>Per-turn input.</b> The lower band is each request's own input. The drop after the diamond is the compaction.</li>
+        <li data-pin="10"><b>First prompt.</b> The card's title is the first thing you asked for.</li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="tour" id="tour">
+    <div class="sec-head">
+      <h2>Tour</h2>
+      <p>Six views, all from the same logs. Every control writes to the URL, so a refresh or a shared link opens the same view.</p>
+    </div>
+    <div class="tabs" role="tablist" aria-label="Views">
+      <button type="button" role="tab" id="tab-grid" aria-controls="panel-grid" aria-selected="true" data-tab="grid">Sessions</button>
+      <button type="button" role="tab" id="tab-turns" aria-controls="panel-turns" aria-selected="false" tabindex="-1" data-tab="turns">Turns</button>
+      <button type="button" role="tab" id="tab-tools" aria-controls="panel-tools" aria-selected="false" tabindex="-1" data-tab="tools">By tool</button>
+      <button type="button" role="tab" id="tab-files" aria-controls="panel-files" aria-selected="false" tabindex="-1" data-tab="files">By file</button>
+      <button type="button" role="tab" id="tab-table" aria-controls="panel-table" aria-selected="false" tabindex="-1" data-tab="table">Table</button>
+      <button type="button" role="tab" id="tab-calendar" aria-controls="panel-calendar" aria-selected="false" tabindex="-1" data-tab="calendar">Calendar</button>
+    </div>
+    <div class="panels">
+      <div class="panel" role="tabpanel" id="panel-grid" aria-labelledby="tab-grid">
+        <button type="button" class="zoomable shot" data-full="images/grid.webp" data-title="Sessions grid"><img src="images/grid.webp" alt="Grid of session charts for one day" width="1440" height="900" loading="lazy"></button>
+        <div class="notes">
+          <h3>Sessions grid</h3>
+          <p>The default view: the top 50 sessions of the last 24 hours, heaviest first.</p>
+          <ul>
+            <li>Pick a window with the date fields, the ◀ ▶ steps, or 1h to 90d.</li>
+            <li>Filter to one source: all, Copilot, Codex or Claude.</li>
+            <li>Sort by total input, cost, most recent, uncached, requests or duration.</li>
+            <li>Set a top-N cap and a minimum token count to drop small sessions.</li>
+            <li>Show sub-agents inside their parent, or as their own lines.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="panel" role="tabpanel" id="panel-turns" aria-labelledby="tab-turns" hidden>
+        <button type="button" class="zoomable shot" data-full="images/detail-turns.webp" data-title="Session detail: turns"><img src="images/detail-turns.webp" alt="Session detail with a large chart and a table of every model request" width="1440" height="900" loading="lazy"></button>
+        <div class="notes">
+          <h3>Session detail: turns</h3>
+          <p>Click a card to open it. One row per model request, grouped by agent.</p>
+          <ul>
+            <li>Model, reasoning level, input, cached, uncached, output and cost for each request.</li>
+            <li>The tool calls that ran before each request, so you see what it read.</li>
+            <li>Hover a dot to find its row, or a row to find its dot.</li>
+            <li>Expand a row for each tool's arguments and result.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="panel" role="tabpanel" id="panel-tools" aria-labelledby="tab-tools" hidden>
+        <button type="button" class="zoomable shot" data-full="images/detail-tools.webp" data-title="Session detail: by tool"><img src="images/detail-tools.webp" alt="Session detail grouped by tool name" width="1440" height="900" loading="lazy"></button>
+        <div class="notes">
+          <h3>By tool</h3>
+          <p>The same session, rolled up by tool name.</p>
+          <ul>
+            <li>Calls, failures, new input, uncached input, output and cost per tool.</li>
+            <li>New input is how much a request's context grew since the one before. It points at the tool whose output was large.</li>
+            <li>A tab per tool lists each call with its arguments.</li>
+            <li>The file-read tab switches between a table and a heat map of the lines read.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="panel" role="tabpanel" id="panel-files" aria-labelledby="tab-files" hidden>
+        <button type="button" class="zoomable shot" data-full="images/detail-files.webp" data-title="Session detail: by file"><img src="images/detail-files.webp" alt="Session detail grouped by file path" width="1440" height="900" loading="lazy"></button>
+        <div class="notes">
+          <h3>By file</h3>
+          <p>Tool calls grouped by the file path in their arguments.</p>
+          <ul>
+            <li>See which files the agent read and edited, and how often.</li>
+            <li>Filter by a path, such as <code>/docs</code>, to check one area.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="panel" role="tabpanel" id="panel-table" aria-labelledby="tab-table" hidden>
+        <button type="button" class="zoomable shot" data-full="images/table.webp" data-title="Table rollup"><img src="images/table.webp" alt="Sortable table with one row per session" width="1440" height="900" loading="lazy"></button>
+        <div class="notes">
+          <h3>Table</h3>
+          <p>One row per session, for a week or more at a time.</p>
+          <ul>
+            <li>Model, reasoning level, requests, sub-agents, input, cached, cache %, output, cost and duration.</li>
+            <li>Click a column header to sort. Click a row for its detail.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="panel" role="tabpanel" id="panel-calendar" aria-labelledby="tab-calendar" hidden>
+        <button type="button" class="zoomable shot" data-full="images/calendar.webp" data-title="Usage calendar"><img src="images/calendar.webp" alt="Year calendar with daily input tokens" width="1440" height="900" loading="lazy"></button>
+        <div class="notes">
+          <h3>Calendar</h3>
+          <p>A year of daily use. Click a day to show only that day.</p>
+          <ul>
+            <li>Copilot alone shows billed credits (AIC) or dollars.</li>
+            <li>Codex, Claude and mixed views show input tokens, or estimated dollars where model prices are known.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="fit" id="fit">
+    <h2>Is it for you?</h2>
+    <div class="cols">
+      <div>
+        <h3>Worth it if</h3>
+        <ul>
+          <li>You use Copilot agent mode, Codex or Claude Code and want to know why one session cost more than another.</li>
+          <li>You want to find the tool calls or sub-agents that grow the context.</li>
+          <li>You want to compare cache hits across models and sources.</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Skip it if</h3>
+        <ul>
+          <li>You need billing totals for a team. llmly reads one machine's logs.</li>
+          <li>You need exact cost for Codex or Claude. Their logs have no billed amount, so llmly shows tokens or an estimate from list prices.</li>
+          <li>You use another agent. Only these three sources are parsed today.</li>
+        </ul>
+      </div>
+    </div>
+    <p class="note">llmly only reads files. It sends nothing anywhere, and the server listens on 127.0.0.1 unless you pass <code>--host</code>.</p>
+  </section>
+
+  <section class="start" id="start">
+    <h2>Start</h2>
+    <ol class="levels">
+      <li>
+        <h3>Run it <span class="time">about 1 minute</span></h3>
+        <p>Needs <a href="https://docs.astral.sh/uv/">uv</a>. The first run installs Flask; later runs start at once. It opens on port 5057, or the next free port.</p>
+        <div class="cmd"><code>uvx llmly</code><button type="button" class="copy" data-copy="uvx llmly" aria-label="Copy uvx llmly"><span>Copy</span></button></div>
+      </li>
+      <li>
+        <h3>Run from source <span class="time">about 2 minutes</span></h3>
+        <div class="cmd block"><code>git clone https://github.com/byronwall/llmly.git
+cd llmly
+uv run app.py</code><button type="button" class="copy" data-copy="git clone https://github.com/byronwall/llmly.git&#10;cd llmly&#10;uv run app.py" aria-label="Copy the clone and run commands"><span>Copy</span></button></div>
+      </li>
+      <li>
+        <h3>No Copilot sessions? <span class="time">a few minutes</span></h3>
+        <p>Print every folder llmly checked and how many logs it found. Then pass the right one with <code>--copilot-storage</code>.</p>
+        <div class="cmd"><code>uvx llmly --diagnose-logs</code><button type="button" class="copy" data-copy="uvx llmly --diagnose-logs" aria-label="Copy uvx llmly --diagnose-logs"><span>Copy</span></button></div>
+      </li>
+    </ol>
+  </section>
+
+  <section class="reference" id="reference">
+    <h2>Reference</h2>
+
+    <h3 id="sources">Where it reads</h3>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Source</th><th>Files</th><th>Default folder</th><th>Change it with</th></tr></thead>
+      <tbody>
+        <tr id="source-copilot"><td>Copilot</td><td><code>&lt;ws&gt;/GitHub.copilot-chat/debug-logs/&lt;session&gt;/main.jsonl</code>, plus <code>runSubagent-*.jsonl</code> beside it</td><td>VS Code <code>User/workspaceStorage</code>. Also checks Insiders, VSCodium, Cursor and Windsurf.</td><td><code>COPILOT_USAGE_STORAGE</code> or <code>--copilot-storage</code></td></tr>
+        <tr id="source-codex"><td>Codex</td><td><code>sessions/**/*.jsonl</code> and <code>state_5.sqlite</code> for titles and sub-agent links</td><td><code>~/.codex</code></td><td><code>CODEX_USAGE_HOME</code> or <code>CODEX_HOME</code></td></tr>
+        <tr id="source-claude"><td>Claude Code</td><td><code>projects/&lt;folder&gt;/&lt;session&gt;.jsonl</code> and <code>&lt;session&gt;/subagents/agent-*.jsonl</code>. The CLI and the desktop app write the same files.</td><td><code>~/.claude</code></td><td><code>CLAUDE_USAGE_HOME</code> or <code>CLAUDE_CONFIG_DIR</code></td></tr>
+        <tr id="source-claude-desktop"><td>Claude Desktop titles</td><td>Session title and effort, when present</td><td>Claude's app-support folder, <code>claude-code-sessions</code></td><td><code>CLAUDE_DESKTOP_SESSIONS</code></td></tr>
+        <tr id="source-cache"><td>Cache</td><td>Daily totals, kept by file time and size</td><td><code>~/.cache/llmly</code></td><td><code>LLMLY_CACHE_DIR</code></td></tr>
+      </tbody>
+    </table></div>
+
+    <h3 id="flags">Command-line options</h3>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Option</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr id="flag-port"><td><code>--port N</code></td><td>Port to listen on. Default: the first free port from 5057.</td></tr>
+        <tr id="flag-host"><td><code>--host H</code></td><td>Address to bind. Default <code>127.0.0.1</code>.</td></tr>
+        <tr id="flag-no-open"><td><code>--no-open</code></td><td>Start the server without opening a browser tab.</td></tr>
+        <tr id="flag-copilot-storage"><td><code>--copilot-storage PATH</code></td><td>The VS Code <code>User/workspaceStorage</code> folder to read Copilot logs from.</td></tr>
+        <tr id="flag-diagnose-logs"><td><code>--diagnose-logs</code></td><td>Print the Copilot log folders checked and the logs found, then exit.</td></tr>
+        <tr id="flag-debug"><td><code>--debug</code></td><td>Run Flask in debug mode.</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3 id="numbers">What the numbers mean</h3>
+    <dl class="defs">
+      <dt id="def-input">Input</dt><dd>The full prompt of a request, cached part included. For Claude this is <code>input_tokens + cache_read + cache_creation</code>.</dd>
+      <dt id="def-uncached">Uncached</dt><dd>Input minus cached. The part sent at full price.</dd>
+      <dt id="def-aic">AIC</dt><dd>Copilot's billed credits, from the per-request value in its log. 100 AIC is $1.</dd>
+      <dt id="def-reasoning">Reasoning</dt><dd>The effort level the request asked for (low to xhigh), not a token count.</dd>
+      <dt id="def-compaction">Compaction</dt><dd>A request that summarized the conversation to free context.</dd>
+    </dl>
+  </section>
+
+  <section class="agents" id="agents">
+    <h2>For coding agents</h2>
+    <p>The viewer is a JSON API with a page on top. With llmly running, an agent can read the same data with <code>curl</code>:</p>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Route</th><th>Returns</th></tr></thead>
+      <tbody>
+        <tr id="api-sessions"><td><code>GET /api/sessions</code></td><td>Session summaries. Query: <code>source</code> (all, copilot, codex, claude), <code>start_ts</code> and <code>end_ts</code> or <code>since_hours</code>, <code>sort</code>, <code>limit</code>, <code>min_tokens</code>.</td></tr>
+        <tr id="api-session"><td><code>GET /api/session/&lt;source:id&gt;</code></td><td>One session: every request and the tool calls before it.</td></tr>
+        <tr id="api-daily"><td><code>GET /api/daily_usage</code></td><td>Daily totals. Query: <code>source</code>, <code>unit</code> (aic or usd).</td></tr>
+        <tr id="api-stats"><td><code>GET /api/stats</code></td><td>Totals for the last N hours: sessions, requests, input, cached, output. Query: <code>since_hours</code>, <code>source</code>.</td></tr>
+      </tbody>
+    </table></div>
+    <div class="cmd block"><code>curl -s 'http://127.0.0.1:5057/api/sessions?source=claude&amp;since_hours=24&amp;sort=uncached&amp;limit=5'</code><button type="button" class="copy" data-copy="curl -s 'http://127.0.0.1:5057/api/sessions?source=claude&amp;since_hours=24&amp;sort=uncached&amp;limit=5'" aria-label="Copy the curl command"><span>Copy</span></button></div>
+    <p>This page has an index for agents at <a href="llms.txt">llms.txt</a>.</p>
+  </section>
+
+  <section class="built prose" id="built">
+    <h2>How I built it</h2>
+    <p>llmly started in <span data-stat="first_commit">June 2026</span> as a Flask app I ran from a checkout. Copilot came first, then Codex, then Claude Code. Each source logs usage its own way. Copilot reports billed credits for each request. Codex writes a token count event after each turn. Claude splits one request across several transcript lines that repeat the same usage, so the parser keeps one per request ID. All three end up as the same session shape, and the browser draws the charts as SVG from that JSON.</p>
+    <figure class="flow" aria-label="How data moves through llmly">
+      <span>Copilot logs<br>Codex rollouts<br>Claude transcripts</span><i>→</i><span>one parser per source</span><i>→</i><span>Session model</span><i>→</i><span>Flask JSON API</span><i>→</i><span>SVG in the browser</span>
+    </figure>
+    <p>The command I wanted was <code>uvx llmly</code>. Getting there meant making <code>llmly/</code> the package, with its templates and JavaScript inside the wheel, and a console script that picks a free port and opens the browser. I wrote up the packaging in <a href="https://byroni.us/blog/packaging-llmly-for-pypi">Packaging llmly for PyPI</a>. The publish script checks the package name before it uploads. That check already stopped one upload after a merge put the old name back.</p>
+    <p class="numbers"><span data-stat="commits">25</span> commits · <span data-stat="python_lines">2,954</span> lines of Python · <span data-stat="js_lines">2,505</span> lines of JavaScript modules · <span data-stat="tests">17</span> tests on temporary log fixtures · no build step</p>
+    <p>The demo on this page is the real frontend. A build script writes made-up logs for all three sources, runs llmly's own parsers on them, and saves the API answers as JSON. A small script in the page answers the viewer's requests from those files.</p>
+  </section>
+</main>
+
+<footer class="foot">
+  <span><a href="https://github.com/byronwall/llmly">byronwall/llmly</a> · MIT · <a href="https://pypi.org/project/llmly/">PyPI</a> · <a href="https://byroni.us/projects/data-viz-copilot-usage">byroni.us project page</a></span>
+  <span class="muted">Built from <span data-stat="built_from">main</span>. The demo and every screenshot use fictional logs.</span>
+</footer>
+
+<dialog class="lightbox" id="lightbox" aria-label="Screenshot viewer">
+  <div class="lb-bar">
+    <span class="lb-title" id="lbTitle"></span>
+    <span class="lb-actions">
+      <button type="button" id="lbPrev" aria-label="Previous screenshot">←</button>
+      <button type="button" id="lbNext" aria-label="Next screenshot">→</button>
+      <button type="button" id="lbActual">Actual size</button>
+      <button type="button" id="lbClose">Close</button>
+    </span>
+  </div>
+  <div class="lb-stage" id="lbStage"><img id="lbImg" alt=""></div>
+</dialog>
+</body>
+</html>
