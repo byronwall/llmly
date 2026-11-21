@@ -1,6 +1,8 @@
 # llmly
 
-Interactive web viewer for VS Code Copilot, Codex, and Claude coding-session token usage. It reads local Copilot debug logs, Codex rollout logs, and Claude transcripts, then turns each session into a small-multiple chart of cumulative token use over time, with a drill-in modal showing every LLM call and the tool invocations that fed it.
+See where each coding session spends its tokens. **[Site and live demo](https://byronwall.github.io/llmly/)**
+
+llmly is an interactive web viewer for VS Code Copilot, Codex, and Claude coding-session token usage. It reads local Copilot debug logs, Codex rollout logs, and Claude transcripts, then turns each session into a small-multiple chart of cumulative token use over time, with a drill-in modal showing every LLM call and the tool invocations that fed it.
 
 Copilot data comes from the debug logs that the Copilot extension writes under VS Code's `workspaceStorage` directory (`<workspaceStorage>/<wsid>/GitHub.copilot-chat/debug-logs/`). Codex data comes from `CODEX_HOME` (or `~/.codex`), using `sessions/**/*.jsonl` for per-turn usage and `state_5.sqlite` for thread titles, source metadata, and spawned-subagent parentage. Claude data comes from `CLAUDE_CONFIG_DIR` (or `~/.claude`), using the `projects/<cwd>/<sessionId>.jsonl` transcripts — the same files the Claude Code CLI and the Claude Desktop app both write (Desktop runs Claude Code under the hood). Optional per-session titles/effort are read from the Claude Desktop metadata files when present.
 
@@ -86,6 +88,10 @@ uvx llmly --copilot-storage "$HOME/Library/Application Support/Code - Insiders/U
 If Copilot sessions do not appear, run `uvx llmly --diagnose-logs` to print the VS Code-family log locations that were checked and how many Copilot `main.jsonl` files were found. Once you identify the right `workspaceStorage` directory, pass it with `--copilot-storage <path>` or set `COPILOT_USAGE_STORAGE=<path>`.
 
 uv will create `.venv/` and install Flask on the first run; subsequent runs are instant.
+
+## Site
+
+`site/` holds the landing page and live demo at <https://byronwall.github.io/llmly/>. The demo runs the real viewer on fictional logs. See [site/README.md](site/README.md) to build, preview, reshoot screenshots, and check it.
 
 ## Publish
 

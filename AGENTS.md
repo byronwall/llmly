@@ -7,6 +7,7 @@ Operational guidance for agents working in this repo.
 - This is a deliberately small Flask app packaged for PyPI as `llmly`.
 - Runtime Python code lives in `llmly/app.py` and `llmly/analyzer/`; root-level `app.py` and `analyzer/` are compatibility shims.
 - Browser code is plain JavaScript modules in `llmly/static/js/`; CSS is in `llmly/static/style.css`; templates are in `llmly/templates/`.
+- `site/` is the GitHub Pages landing page. `site/scripts/build_demo.py` writes `site/demo/` (not committed) from fictional logs; `site/README.md` has the build, capture and check commands. Never use real session logs for the site.
 - Avoid adding build systems, bundlers, task runners, or framework migrations unless the user explicitly asks for them.
 
 ## Standard Commands
@@ -19,6 +20,8 @@ Operational guidance for agents working in this repo.
 - Publish and patch-bump version: `./publish-llmly.sh` (`./publish-llmly.sh test` for TestPyPI)
 - Check Python syntax when parser/app code changes: `uv run python -m py_compile app.py analyzer/__init__.py llmly/app.py llmly/analyzer/*.py tests/test_analyzer.py`
 - Check frontend syntax when frontend modules change: `node --check llmly/static/js/app.mjs`
+- Build the site demo: `uv run python site/scripts/build_demo.py`
+- Check the site: `uv run --with playwright==1.58.0 --with pillow python site/scripts/check_site.py`
 
 Use `uv` for Python dependency management. Add test-only dependencies with `uv add --dev <package>` so `pyproject.toml` and `uv.lock` stay in sync.
 
