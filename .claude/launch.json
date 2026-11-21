@@ -4,8 +4,27 @@
     {
       "name": "copilot-usage",
       "runtimeExecutable": "uv",
-      "runtimeArgs": ["run", "app.py", "--port", "5058"],
+      "runtimeArgs": [
+        "run",
+        "app.py",
+        "--port",
+        "5058"
+      ],
       "port": 5058
+    },
+    {
+      "name": "site",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "dlx",
+        "http-server@14.1.1",
+        "tmp/pages",
+        "-p",
+        "5180",
+        "-c-1",
+        "--silent"
+      ],
+      "port": 5180
     }
   ]
 }
