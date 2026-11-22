@@ -6,3 +6,5 @@ __pycache__/
 .daily_codex_cache.json
 .daily_claude_cache.json
 .env
+tmp/
+site/demo/
